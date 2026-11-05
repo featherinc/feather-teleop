@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meta Quest Hand — Start here</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172535;font:17px/1.55 system-ui,Segoe UI,sans-serif}main{max-width:900px;margin:30px auto;padding:30px;background:white;border-radius:16px}h1{font-size:32px;margin:0 0 8px}h2{font-size:22px;margin:26px 0 10px}p{margin:10px 0}.note{padding:14px 18px;background:#fff4d8;border-left:5px solid #c48916;border-radius:6px}.small{font-size:14px;color:#536477}table{width:100%;border-collapse:collapse;font-size:15px}td,th{text-align:left;padding:10px;border-bottom:1px solid #dce3eb;vertical-align:top}code{font-size:13px;overflow-wrap:anywhere}li{margin:9px 0}a{color:#1563a6}summary{cursor:pointer;font-weight:650}details{padding:14px 0;border-top:1px solid #dce3eb}svg{width:100%;height:auto}pre{white-space:pre-wrap;font-size:13px;background:#f1f4f8;padding:14px;border-radius:8px}@media print{body{background:white}main{margin:0;padding:10px}details{break-inside:avoid}}
+</style></head><body><main>
+<h1>Meta Quest Hand: start here</h1>
+<p>You move the controllers. The AGX does the maths. The robot follows.</p>
+<div class="note"><strong>Robot models are not included. Supply the matching URDF separately. A new AGX also needs its robot software installed.</strong><br>Use the matching FeatherSDK and its working CAN/Teensy setup. Camera video also needs the ZED SDK. These installations are not in the ZIP.</div>
+
+<h2>First: unzip the two files</h2>
+<p>These are two normal ZIP files. <strong>No numbered parts, joining, or scripts are needed.</strong></p>
+<ol>
+<li>Download <code>albert_meta_quest_hand.zip</code>, <code>Unity_Meta_Quest_Project.zip</code>, and this guide.</li>
+<li>On <strong>Windows</strong>, right-click each ZIP and choose <strong>Extract All</strong>.</li>
+<li>On <strong>Linux / Ubuntu</strong>, right-click each ZIP and choose <strong>Extract Here</strong>, or open it in your archive manager and click <strong>Extract</strong>.</li>
+<li>You get <code>albert_meta_quest_hand/</code> and <code>My project/</code>. Use new destination folders to avoid replacing existing files. Continue below.</li>
+</ol>
+<p class="small">The AGX ZIP is about 78 MB. The Unity ZIP is about 28 MB. Both are below 100 MB per file. An AGX without a desktop can use its normal unzip command; no supplied script is required.</p>
+
+<h2>1. What are these files?</h2>
+<table><tr><th>File</th><th>What it is for</th></tr>
+<tr><td><a href="albert_meta_quest_hand.zip">albert_meta_quest_hand.zip</a></td><td>The AGX notebook, robot helpers, settings, IK seeds, camera code, and Quest app (APK). Robot models and old recordings/logs are omitted.</td></tr>
+<tr><td><a href="Unity_Meta_Quest_Project.zip">Unity_Meta_Quest_Project.zip</a></td><td>The editable Quest app. Open it on a Windows PC, not on the AGX. You only need this to change or rebuild the app.</td></tr>
+</table>
+
+<h2>2. Set it up</h2>
+<ol>
+<li><strong>Unzip the AGX ZIP.</strong> Put its <code>meta_quest_hand</code> and <code>configs</code> folders inside <code>/home/feather/Workspace/featheros/showcase/team/albert/</code>. Supply the matching <code>URDF_C_Arm_03_description-20260625T192804Z-3-001</code> model folder separately beside them, including the full/left/right URDFs and referenced meshes. It is no longer bundled. Section 2 cannot load IK without it. Back up existing folders before replacing anything.</li>
+<li><strong>Install the Quest app.</strong> Inside the unzipped folder, find <code>QuestAGXPoseHandModes.apk</code>. Install it with Meta Quest Developer Hub, or use <code>adb install -r "QuestAGXPoseHandModes.apk"</code> with USB debugging allowed.</li>
+<li><strong>Join the same Wi-Fi.</strong> Connect the Quest and your PC to <code>JetsonCamNet</code>. This app sends to the AGX at <code>10.42.0.1</code>. No internet is needed during teleoperation.</li>
+<li><strong>Open the notebook on the AGX.</strong> Use <code>meta_quest_hand/meta_quest_hand.ipynb</code> and the working FeatherSDK Python kernel. Read Settings first. The saved copy has <code>RUN_HARDWARE=True</code>; initialization can move/calibrate hardware. Use <code>False</code> for a model-only preview.</li>
+<li><strong>Run the numbered sections in order.</strong> Section 2a is optional video; section 3.1 is optional manual homing. Run the other setup cells, then section 7. Use only one live robot notebook at a time.</li>
+</ol>
+
+<h2>3. Start and stop</h2>
+<p>Open <strong>Quest AGX Pose</strong>. Wait for <strong>READY</strong>. Hold your neutral controller/head pose. Press right <strong>A</strong> to start; the arms first move to their zero-joint reference. Press <strong>A again</strong> to home and disable the arms. Wait for READY before starting again.</p>
+<table><tr><th>Your control</th><th>What moves</th></tr>
+<tr><td>Move each controller</td><td>That robot arm</td></tr>
+<tr><td>Front trigger</td><td>Squeeze = close that hand; release = open</td></tr>
+<tr><td>Left Y / right B</td><td>Switch that hand between whole-hand and thumb/index pinch</td></tr>
+<tr><td>Left / right side grip</td><td>Torso down / up</td></tr>
+<tr><td>Left stick / right stick left-right</td><td>Move the base / rotate the base</td></tr>
+<tr><td>Turn or tilt your head</td><td>Neck yaw/pitch</td></tr></table>
+<p class="small">Right-stick up/down does not move the torso. Recenter the Quest only while READY.</p>
+
+<h2>How it works</h2>
+<svg viewBox="0 0 820 270" role="img" aria-label="Quest controllers and head send poses over Wi-Fi to the AGX notebook. IK turns poses into joint angles. FeatherSDK controls the robot. The optional ZED camera sends video back to the Quest.">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#3266a1"/></marker></defs>
+<g fill="#eaf2fc" stroke="#9bb9dd" stroke-width="1.5"><rect x="10" y="25" width="170" height="80" rx="12"/><rect x="225" y="25" width="170" height="80" rx="12"/><rect x="440" y="25" width="170" height="80" rx="12"/><rect x="655" y="25" width="155" height="80" rx="12"/></g>
+<g font-family="Segoe UI, sans-serif" fill="#172535" text-anchor="middle" font-size="18"><text x="95" y="56">Quest</text><text x="95" y="82" font-size="15">Hands + head</text><text x="310" y="56">AGX notebook</text><text x="310" y="82" font-size="15">Reads your movement</text><text x="525" y="56">IK + FeatherSDK</text><text x="525" y="82" font-size="15">Maths + commands</text><text x="732" y="56">Robot</text><text x="732" y="82" font-size="15">Moves</text></g>
+<g stroke="#3266a1" stroke-width="2.5" fill="none" marker-end="url(#arrow)"><path d="M182 66H220"/><path d="M397 66H435"/><path d="M612 66H650"/></g>
+<text x="200" y="18" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="13">Wi-Fi</text>
+<rect x="440" y="170" width="370" height="65" rx="12" fill="#e8f5ef" stroke="#92c4ac"/><text x="625" y="198" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="18">Optional: ZED camera on the AGX</text><text x="625" y="220" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="14">Live video goes back to the Quest</text><path d="M438 202H95V110" fill="none" stroke="#3266a1" stroke-width="2.5" marker-end="url(#arrow)"/>
+</svg>
+
+<details><summary>Extra setup: camera, Unity, and missing software</summary>
+<p><strong>AGX software:</strong> The matching FeatherSDK, its dependencies and native communications bridge must already work. The code expects a valid <code>/feathersys/configs/infra/comms_manager_conf.py</code>. The loose file with that name is a reference copy; do not blindly overwrite another robot's configuration. Check motor IDs, CAN wiring, limits, and calibration for the receiving robot.</p>
+<p><strong>Python:</strong> The notebook uses NumPy, SciPy, Pinocchio (robotics), pandas, and Jupyter/ipykernel, plus FeatherSDK's dependencies. Video also uses Pillow and <code>pyzed.sl</code>. The package does not pin a complete environment.</p>
+<p><strong>Camera:</strong> Copy <code>quest_zed.py</code> and <code>quest_zed_worker.py</code> into <code>/home/feather/Workspace/featheros/TeleVision/teleop/</code>. The rest of TeleVision is not needed for this camera path. Section 2a expects <code>/home/feather/Workspace/featheros/TeleVision/.env-quest/bin/python</code> with the camera dependencies. It selects ZED 2i serial <code>35928961</code>; change that setting for another camera. Pose input uses UDP 5005; video uses TCP 5006.</p>
+<p><strong>Unity:</strong> Extract the Unity ZIP, then use Unity Hub to add the <code>My project</code> folder. Open with <strong>6000.3.6f1</strong> and Android Build Support. Internet is needed the first time to restore Unity packages (Meta XR 83.0.4). The saved build scene is <code>Assets/_Recovery/0 (5).unity</code>. Both pose and video scripts are attached. The ZIP includes Assets (and .meta files), Packages, and ProjectSettings, except the unused <code>Assets/Free Pack</code> audio collection. The spoken hand-mode clips in <code>Assets/Resources/FingerSelection</code> are kept. One older recovery scene (<code>0 (13).unity</code>) loses a sound reference; the active build scene does not use those audio files. Cache/build folders are omitted; Unity regenerates them. All retained files are unchanged. The original Unity project was not modified, and no new APK was built.</p>
+<p><strong>Find the code:</strong> After extracting the AGX ZIP, read <code>meta_quest_hand/NOTEBOOK_FILE_GUIDE.md</code> for the section-to-file map. Session logs go in <code>meta_quest_hand/recordings/live/</code>.</p>
+</details>
+<p class="small">Checked 5 November 2026. Both ZIP integrity checks passed; all retained Unity files match the previous archive byte-for-byte. Only unused Free Pack assets were removed from the shared Unity project. Robot models and old recordings/runtime logs were removed from the AGX package. No new Unity build, robot test, or headset test was run.</p>
+</main></body></html>
