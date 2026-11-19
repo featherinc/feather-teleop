@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feather headset</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 24px; background: #0b0b0b; color: #f2f1ec; font: 18px/1.45 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 12px; }
+  button { font: inherit; font-size: 22px; padding: 14px 28px; border: 0; border-radius: 10px; background: #2a78d6;
+           color: #fff; }
+  button:disabled { background: #3a3a38; color: #8d8c87; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 18px 0; }
+  dt { color: #a3a29c; }
+  dd { margin: 0; font-variant-numeric: tabular-nums; }
+  #problem { color: #ff8a5c; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Feather headset</h1>
+<p><button id="enter" disabled>Enter</button></p>
+<p id="problem"></p>
+<dl>
+  <dt>Robot</dt><dd id="link">connecting</dd>
+  <dt>Demonstration</dt><dd id="phase">-</dd>
+  <dt>Camera</dt><dd id="video">no picture</dd>
+</dl>
+<canvas id="xr" hidden></canvas>
+<script type="module" src="main.js"></script>
+</body>
+</html>

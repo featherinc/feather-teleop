@@ -1,0 +1,68 @@
+# Quest teleoperation settings: metres, radians, seconds. Tuning lives in the code, as settings-class defaults.
+
+headset: table         # table: set down facing you, read over adb. worn: on your head, through a web page.
+
+table:
+  source: network      # usb: plugged into the robot's computer. network: a laptop streams it here (python -m feather_teleop.headsets.table --to <robot>)
+  port: 8799           # UDP port of that stream
+
+worn:
+  address: 0.0.0.0     # serve the page on every network the robot is on
+  port: 8443           # https://<robot>:8443 in the headset's browser
+  cert: headset_cert.pem   # the page's certificate and key (see the README), relative to the repository;
+  key: headset_key.pem     # both null: plain http, which only works through `adb reverse`
+  video: true          # show the robot's cameras in the headset (the camera service's live stream)
+  video_port: 8444     # video from its own process on this port (see the README); null: on the page's socket
+  debug: true          # a status readout in the lower left of the view
+
+robot: null            # which block of `robots` this robot is
+
+# Everything that differs between robots, measured on this unit: no two C-samples or D-samples are assumed alike.
+# Every value is required; the session will not start until each is filled in. Copy a block for another robot.
+robots:
+  c_sample:
+    config: null            # the SDK's robot config version (feathersdk/configs/user_configs/<version>), e.g. v0.5.1
+    urdf: null              # path to this robot's URDF, inside its package so meshes resolve
+    grippers: null          # the grippers on this robot: [left, right], one side, or []; one listed but missing stops the SDK
+    cameras: null           # camera service fields over the config's own, e.g. {serial: <the stereo camera's>}; {}: none
+    tool_offset: null       # m, the point the controller moves, in each arm's last joint frame: {left: [x, y, z], right: [x, y, z]}
+    body_boxes: null        # the body from above, which the elbows keep clear of: [{x: [lo, hi], y: [lo, hi], below: h}, ...] (m, base frame)
+    body_clear: null        # m the elbows keep from body_boxes; less than the start posture's own gap to them
+    start_posture: null     # rad by URDF joint (others 0), where every demonstration starts, e.g. {EpL: ..., EpR: ...}
+    neck_pitch_sign: null   # 1 or -1, so that looking up pitches the camera up
+    neck_yaw_sign: null     # 1 or -1, so that looking left yaws the camera left
+  d_sample:
+    config: null            # the SDK's robot config version (feathersdk/configs/user_configs/<version>), e.g. v0.5.1
+    urdf: null              # path to this robot's URDF, inside its package so meshes resolve
+    grippers: null          # the grippers on this robot: [left, right], one side, or []; one listed but missing stops the SDK
+    cameras: null           # camera service fields over the config's own, e.g. {serial: <the stereo camera's>}; {}: none
+    tool_offset: null       # m, the point the controller moves, in each arm's last joint frame: {left: [x, y, z], right: [x, y, z]}
+    body_boxes: null        # the body from above, which the elbows keep clear of: [{x: [lo, hi], y: [lo, hi], below: h}, ...] (m, base frame)
+    body_clear: null        # m the elbows keep from body_boxes; less than the start posture's own gap to them
+    start_posture: null     # rad by URDF joint (others 0), where every demonstration starts, e.g. {EpL: ..., EpR: ...}
+    neck_pitch_sign: null   # 1 or -1, so that looking up pitches the camera up
+    neck_yaw_sign: null     # 1 or -1, so that looking left yaws the camera left
+
+parts: [arms, base, neck, torso, cameras]   # what a demonstration drives; arms is required
+arms: [left, right]    # the arms that follow
+mirror: false          # table only. true: you face the robot, your right hand drives the arm on your right, and motions keep their direction in the room
+spatial_scale: 1.5     # hand metres per controller metre
+task: "Quest teleoperation demonstration"
+episodes: episodes     # where demonstrations are saved, relative to the repository
+collision_margin: 0.03 # clearance the SDK's collision check keeps between the arms and the body; null: off
+
+arm:
+  speed_scale: 0.6     # fraction of each motor's speed limit
+  return_speed: 0.3    # rad/s, joint speed of the moves to the start posture and home
+  floor: 0.0           # lowest height of the tool point; the last 15 cm down are slowed
+  elbow_follow: false  # worn: the robot's elbow follows yours (see the README)
+
+torso:                 # table: follows a gripped wrist's height relative to its shoulder
+  rise_above: 0.10     # rise above this
+  sink_below: -0.70    # sink below this
+
+base:
+  linear_speed: 0.2    # m/s at full stick
+  angular_speed: 0.333 # rad/s turning
+neck:
+  speed: 1.0           # rad/s at full stick, and the fastest it follows the head

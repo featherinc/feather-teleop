@@ -1,0 +1,9 @@
+Feather Quest teleoperation
+Copyright 2026 Feather Robotics
+
+DROID (https://github.com/droid-dataset/droid)
+  feather_teleop/control/controller.py is a port of droid/controllers/oculus_controller.py (class VRPolicy).
+  feathersdk_new/feathersdk/robot/actuator_systems/arm_kinematics.py reimplements the approach of droid/robot_ik/robot_ik_solver.py on Pinocchio.
+
+oculus_reader (https://github.com/rail-berkeley/oculus_reader), Apache License 2.0
+  The headset application whose log feather_teleop/headsets/table.py reads. It is not included here.
