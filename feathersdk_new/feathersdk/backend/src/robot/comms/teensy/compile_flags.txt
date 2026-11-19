@@ -1,0 +1,7 @@
+# clangd working directory is this file's directory. Paths match the Makefile -I flags:
+#   -I $(BACKEND_DIR)           so "qdefs/..." resolves
+#   -I $(MAKEFILE_DIR)/src      local firmware headers
+#   -I $(BACKEND_DIR)/src/utils host tool headers
+-I../../../..
+-Isrc
+-I../../../../src/utils

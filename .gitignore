@@ -1,0 +1,8 @@
+__pycache__/
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+/episodes/
+
+# the worn headset page's certificate
+*.pem

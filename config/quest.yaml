@@ -1,0 +1,60 @@
+# Quest teleoperation settings: metres, radians, seconds. Tuning lives in the code, as settings-class defaults.
+
+headset: table         # table: set down facing you, read over adb. worn: on your head, through a web page.
+
+table:
+  source: network      # usb: plugged into the robot's computer. network: a laptop streams it here (python -m feather_teleop.headsets.table --to <robot>)
+  port: 8799           # UDP port of that stream
+
+worn:
+  address: 0.0.0.0     # serve the page on every network the robot is on
+  port: 8443           # https://<robot>:8443 in the headset's browser
+  cert: headset_cert.pem   # the page's certificate and key (see the README), relative to the repository;
+  key: headset_key.pem     # both null: plain http, which only works through `adb reverse`
+  video: true          # show the robot's cameras in the headset (the camera service's live stream)
+  video_port: 8444     # the video comes from a process of its own on this port, so a frame never holds a pose up. If the page says it has no link to it, open https://<robot>:8444/ in the headset's browser once and accept the certificate (with adb reverse: forward this port too). null: on the page's own socket
+  debug: true          # a readout in the lower left of the view during a demonstration: frame rates, the round trip, tracking, the links, the robot loop's rate and what is wrong now. false: none
+
+robot:                 # the SDK config the notebook starts the robot with
+  config: v0.5.1       # the SDK's robot config version (feathersdk/configs/user_configs/<version>)
+  urdf: ~/Workspace/URDF_C_Arm_04_YAM_Gripper_description/urdf/C_Arm_04_YAM_Gripper_sdk.urdf   # inside its package, so its meshes resolve; null: /feathersys/urdf
+  grippers: [left, right]   # the grippers present; one listed but missing stops the SDK from starting
+  cameras: {}          # camera service fields laid over the config's own, e.g. {serial: 12345678}
+  body_boxes:          # the body seen from above, which the elbows keep clear of; `below`: only up to that height
+    - {x: [-0.18, 0.20], y: [-0.10, 0.10]}                 # torso column and upper body
+    - {x: [-0.26, 0.25], y: [-0.25, 0.25], below: 0.35}    # base
+  # D_V1 robot (v0.6.0), from its URDF's meshes: tool_offset left [0.001, 0.024, -0.219], right [-0.001, -0.023, -0.219] (its wrist-roll frame has x and y the other way round); body_boxes {x: [-0.25, 0.14], y: [-0.093, 0.093]} and {x: [-0.33, 0.19], y: [-0.25, 0.25], below: 0.30}. Its start posture's elbow is 0.101 m from the torso box, so GuardSettings.body_clear (0.10) must come down, to 0.07.
+
+parts: [arms, base, neck, torso, cameras]   # what a demonstration drives; arms is required
+arms: [left, right]    # the arms that follow
+mirror: false          # table only. true: you face the robot, your right hand drives the arm on your right, and motions keep their direction in the room
+spatial_scale: 1.5     # hand metres per controller metre
+task: "Quest teleoperation demonstration"
+episodes: episodes     # where demonstrations are saved, relative to the repository
+collision_margin: 0.03 # clearance the SDK's collision check keeps between the arms and the body; null: off
+
+# Where every demonstration starts, by URDF joint (others are 0): elbows bent, forearms forward. The solver also pulls each arm's redundant joint toward it.
+start_posture: {EpL: -1.484, EpR: 1.484}
+
+# The tool point the controller moves, in each arm's last joint frame: between the gripper's fingertips.
+tool_offset:
+  left: [-0.024, 0.001, -0.219]
+  right: [0.024, -0.001, -0.219]
+
+arm:
+  speed_scale: 0.6     # fraction of each motor's speed limit
+  return_speed: 0.3    # rad/s, joint speed of the moves to the start posture and home
+  floor: 0.0           # lowest height of the tool point: 0 lets the fingertips pick things up from the ground. The last 15 cm down are slowed (ArmSettings.floor_slow_within, floor_down_speed)
+  elbow_follow: false  # worn: the robot's elbow swings as yours does (estimated from your head and controller; the hand stays put). At a demonstration's first grip hold your arm as the start posture: upper arm hanging, forearm forward. Not yet run on a robot
+
+torso:                 # table: follows a gripped wrist's height relative to its shoulder
+  rise_above: 0.10     # rise above this
+  sink_below: -0.70    # sink below this
+
+base:
+  linear_speed: 0.2    # m/s at full stick
+  angular_speed: 0.333 # rad/s turning
+neck:
+  speed: 1.0           # rad/s at full stick, and the fastest it follows the head
+  pitch_sign: -1       # flip a sign if that direction is wrong
+  yaw_sign: -1

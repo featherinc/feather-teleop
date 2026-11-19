@@ -1,0 +1,2 @@
+// DON'T MODIFY. Stores hash of source code, auto-added on recompile 
+static const char* teensy_source_hash_str __attribute__((used)) = "__FEATHER_SOURCE_HASH__17717670070361383221__END_FEATHER_SOURCE_HASH__";
