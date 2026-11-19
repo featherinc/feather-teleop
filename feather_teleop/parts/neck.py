@@ -16,7 +16,7 @@ GRAVITY_AT_REST = 5.0   # m/s^2, the least an accelerometer at rest can read
 
 @dataclass
 class NeckSettings:
-    # The `neck` section of quest.yaml.
+    # The `neck` section of quest.yaml, with the robot's own signs.
     speed: float       # rad/s
     pitch_sign: int    # +1 or -1, so that looking (or pushing the stick) up pitches the camera up
     yaw_sign: int      # +1 or -1, so that looking (or pushing the stick) left yaws the camera left

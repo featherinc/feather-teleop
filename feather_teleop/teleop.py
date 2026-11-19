@@ -46,9 +46,10 @@ def open_headset(settings: dict, say=print):
 def build_follower(side: str, robot, headset, settings: dict) -> ArmFollower:
     # Build the follower of one arm, with its solver, guards and controller.
     arm = getattr(robot.arms_system, f"{side}_arm")
-    start_posture = [settings["start_posture"].get(joint.urdf_joint, 0.0) for joint in arm.describe().joints]
-    ik = ArmIK.for_arm(arm, tool_offset=settings["tool_offset"][side], rest_posture=start_posture)
-    guards = Guards.for_arm(ik, arm, GuardSettings(body_boxes=settings["robot"]["body_boxes"]))
+    profile = settings["robot"]   # this robot's block of quest.yaml's `robots`
+    start_posture = [profile["start_posture"].get(joint.urdf_joint, 0.0) for joint in arm.describe().joints]
+    ik = ArmIK.for_arm(arm, tool_offset=profile["tool_offset"][side], rest_posture=start_posture)
+    guards = Guards.for_arm(ik, arm, GuardSettings(body_boxes=profile["body_boxes"], body_clear=profile["body_clear"]))
 
     worn = settings["headset"] == "worn"
     hand = OTHER_SIDE[side] if settings["mirror"] else side   # mirrored: the controller in the opposite hand
@@ -142,7 +143,7 @@ class QuestTeleop:
         if "base" in wanted:
             parts.append(Base(robot.navigation_system, BaseSettings(**s["base"]), divisor, turn_with_stick=self.worn))
         if "neck" in wanted:
-            neck_settings = NeckSettings(**s["neck"])
+            neck_settings = NeckSettings(**s["neck"], pitch_sign=s["robot"]["neck_pitch_sign"], yaw_sign=s["robot"]["neck_yaw_sign"])
             if self.worn:
                 cameras = robot.camera_service
                 elevation = camera_elevation(cameras) if cameras is not None else None
@@ -167,7 +168,7 @@ class QuestTeleop:
 
     def ready(self) -> None:
         # Raise the torso (if in `parts`), then move the arms to the start posture. Not collision checked.
-        self._move_arms(self.settings["start_posture"])
+        self._move_arms(self.settings["robot"]["start_posture"])
 
     def home(self) -> None:
         # Raise the torso (if in `parts`), then move the arms to their zero posture. Not collision checked.

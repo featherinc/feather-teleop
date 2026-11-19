@@ -14,7 +14,17 @@ from feather_teleop.control.maths import to_matrix
 from feather_teleop.headsets import Reading
 from feather_teleop.loop import RELEASE_AFTER
 
-SETTINGS = config.load()
+# A made-up robot for the tests: quest.yaml leaves every robot's values for the user to measure.
+TEST_ROBOT = {"config": "v0.5.1", "urdf": "robot.urdf", "grippers": ["left", "right"], "cameras": {}, "tool_offset": {"left": [-0.024, 0.001, -0.219], "right": [0.024, -0.001, -0.219]}, "body_boxes": [{"x": [-0.18, 0.20], "y": [-0.10, 0.10]}, {"x": [-0.26, 0.25], "y": [-0.25, 0.25], "below": 0.35}], "body_clear": 0.10, "start_posture": {"EpL": -1.484, "EpR": 1.484}, "neck_pitch_sign": -1, "neck_yaw_sign": -1}
+
+
+def robot_settings() -> dict:
+    # quest.yaml's settings, run on TEST_ROBOT.
+    raw = config.read()
+    return config.resolve({**raw, "robot": "test", "robots": {"test": TEST_ROBOT}})
+
+
+SETTINGS = robot_settings()
 TICK = 0.02    # s, the fake arm's tick
 LIMIT = 3.0    # rad, every joint's range is +-LIMIT
 SPEED = 2.0    # rad/s, every joint's speed limit
@@ -151,8 +161,9 @@ def make_ik(tmp_path, tool_offset=(0.0, 0.0, 0.0)):
 def make_follower(tmp_path, worn=False, mirror=False, arm=None, gripper=None, double_press=HOME, **arm_settings):
     # A follower of the right arm on a FakeArm, started. Returns (follower, headset, arm, clock).
     headset, arm, clock = Headset(), arm or FakeArm(), Clock()
-    ik = make_ik(tmp_path, SETTINGS["tool_offset"]["right"])
-    guards = Guards(ik, "J0", "J3", GuardSettings(body_boxes=SETTINGS["robot"]["body_boxes"]))
+    robot = SETTINGS["robot"]
+    ik = make_ik(tmp_path, robot["tool_offset"]["right"])
+    guards = Guards(ik, "J0", "J3", GuardSettings(body_boxes=robot["body_boxes"], body_clear=robot["body_clear"]))
     controller_settings = ControllerSettings.worn() if worn else ControllerSettings()
     controller = Controller(headset, "l" if mirror else "r", controller_settings, mirror, spatial_scale=1.0, release_after=RELEASE_AFTER, clock=clock)
     if worn:

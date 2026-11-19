@@ -10,44 +10,71 @@ The controller logic follows [DROID](https://droid-dataset.github.io)'s. This is
 ## What you need
 
 - A Feather robot with FeatherSDK and its URDF. The SDK must have the features listed in [feathersdk_new/](feathersdk_new/README.md), which are not in a released SDK yet.
-- A Meta Quest with its controllers.
-- Worn: nothing on the headset; it opens a page in its browser. The headset must reach the robot over the network.
-- Table: the headset in developer mode with the app from [rail-berkeley/oculus_reader](https://github.com/rail-berkeley/oculus_reader) (`adb install -r <its APK>`), and a computer with `adb` for its USB cable: the robot's own, or a laptop on the same network.
-- Jupyter on the robot's computer.
+- A Meta Quest with both controllers.
+- A laptop with Python 3.10 or later and git.
+- One network that the robot, the laptop and (worn) the headset all join.
 
-## Install
+## First-time setup
 
-On the robot's computer, in the SDK's Python environment (and on the laptop, if you use one):
+### The network
+
+- Put the robot, the laptop and, for the worn headset, the Quest on the **same Wi-Fi network**, where they can reach each other. Guest and many office networks isolate devices from each other; use one that doesn't, such as a router of your own.
+- Find the robot's address with `hostname -I` on the robot, and check it from the laptop with `ping <robot address>`.
+- The robot serves on TCP 8443 (the page), 8444 (the video) and 8080 (a redirect to the page), and the table stream arrives on UDP 8799. If the robot runs a firewall, open these.
+- Worn, the video goes over Wi-Fi to the headset: keep the headset near the access point.
+
+### The laptop
 
 ```bash
 git clone <this repository> && cd feather-teleop
-pip install -e ".[robot]"    # on the laptop: pip install -e .
+pip install -e .
 ```
 
-Install it editable (`-e`): the package reads `config/quest.yaml` from the checkout and saves demonstrations there.
+You open the notebook on the robot from the laptop: `ssh feather@<robot address>`, with VS Code's Remote-SSH or a forwarded Jupyter port.
 
-## Run
+Table only: install `adb` (Android platform tools: `sudo apt install adb` on Ubuntu, `brew install android-platform-tools` on macOS, Google's platform-tools download on Windows).
 
-Set `headset` in `config/quest.yaml` to `worn` or `table`.
+### The headset
 
-**Worn.** The headset's browser only shows a page in the headset over https, so make a certificate once, in the repository:
+- Set the new Quest up with a Meta account in the Meta Horizon phone app, let it update, pair both controllers and draw a boundary (the page places you on the floor level it sets).
+- **Worn:** join the same Wi-Fi as the robot (Settings, Wi-Fi). Nothing is installed: the headset's browser opens a page the robot serves.
+- **Table:** turn on developer mode (it needs a Meta developer account; then in the Horizon app, the headset's settings, Developer mode). Plug the Quest into the laptop with a USB-C data cable, put it on and accept **Allow USB debugging** (tick always allow). Then install the headset app from [rail-berkeley/oculus_reader](https://github.com/rail-berkeley/oculus_reader):
+
+  ```bash
+  adb install -r oculus_reader/APK/teleop-debug.apk   # in a clone of that repository
+  ```
+
+  The headset itself needs no network for the table: the laptop reads it over USB and forwards it to the robot. The laptop starts the app and keeps the headset awake.
+
+### The robot
+
+On the robot's computer, in the SDK's Python environment, install it editable (`-e`): the package reads `config/quest.yaml` from the checkout and saves demonstrations there.
+
+```bash
+git clone <this repository> && cd feather-teleop
+pip install -e ".[robot]"
+```
+
+Worn only: the headset's browser opens an immersive page only over https, so make a certificate once, in the repository:
 
 ```bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout headset_key.pem -out headset_cert.pem -subj /CN=feather
 ```
 
-Run the notebook, then open `https://<robot address>:8443` in the headset's browser, accept the certificate warning and press **Enter**. `http://<robot address>:8080` leads there too.
+## Run
 
-The video comes on its own port (`worn.video_port`, 8444). If the page says it has no link to it, open `https://<robot address>:8444/` once and accept the certificate there too. `worn.debug` adds a readout in the lower left of the view: frame rates, round trip, tracking, links, the robot loop's rate and current faults.
+In `config/quest.yaml`, set `headset` to `worn` or `table`, set `robot` to `c_sample` or `d_sample`, and fill in that robot's block (see Settings). The session refuses to start while any of its values is empty.
 
-**Table.** Plug the headset into the laptop, put it on once to accept **Allow USB debugging**, and set it down facing you. Check it, then stream it to the robot:
+**Worn.** Run the notebook, then open `https://<robot address>:8443` in the headset's browser, accept the certificate warning and press **Enter**. `http://<robot address>:8080` leads there too. The video comes on its own port (`worn.video_port`, 8444): on a new headset, also open `https://<robot address>:8444/` once and accept its certificate, or the page says it has no link to the video. `worn.debug` adds a readout in the lower left of the view: frame rates, round trip, tracking, links, the robot loop's rate and current faults.
+
+**Table.** Plug the headset into the laptop and set it down facing you. Check it, then stream it to the robot:
 
 ```bash
 python -m feather_teleop.headsets.table                 # prints the controllers and buttons
 python -m feather_teleop.headsets.table --to <robot address>
 ```
 
-The stream is plain UDP on port 8799, so use a trusted network. With the headset plugged into the robot's computer instead, set `table.source: usb` and skip the stream.
+The stream is plain UDP, so use a trusted network. With the headset plugged into the robot's computer instead, set `table.source: usb` and skip the stream.
 
 **Then** run `notebooks/quest_teleop.ipynb` on the robot, top to bottom. It starts the robot, moves the arms to their start posture and runs the demonstration loop.
 
@@ -85,7 +112,7 @@ The notebook's `ready()` and `home()` moves are **not** collision checked. Clear
 
 ## Settings
 
-`config/quest.yaml` holds what you set, with a comment on each value. Start with `headset` and the `robot` section (your robot's SDK config version, its URDF and grippers), then check the per-robot values: `tool_offset`, `body_boxes`, `start_posture` and the neck's signs.
+`config/quest.yaml` holds what you set, with a comment on each value. Everything that differs between robots is in the robot's block under `robots`: SDK config version, URDF, grippers, camera serials, tool point, body boxes and clearance, start posture and the neck's signs. No two C-samples or D-samples are assumed alike, so these start empty: measure them on your unit and enter them by hand. For another robot, copy a block.
 
 `arm.elbow_follow` (worn) makes the robot's elbow swing as yours does. Your elbow is estimated from the headset and controller, so at each demonstration's first grip hold your arm as the start posture: upper arm hanging, forearm forward.
 

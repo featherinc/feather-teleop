@@ -50,7 +50,9 @@ def stand_teleop(tmp_path, monkeypatch, parts=("arms",)):
     robot = SimpleNamespace(arms_system=arms, urdf_loader=loader, manipulation_system=None, torso_system=None, navigation_system=None, neck_system=None, camera_service=None)
     settings = copy.deepcopy(SETTINGS)
     joints = arms.left_arm.describe().joints
-    settings.update(parts=list(parts), arms=["left"], headset="table", collision_margin=None, spatial_scale=1.0, episodes=str(tmp_path / "episodes"), start_posture={joint.urdf_joint: BENT[i] for i, joint in enumerate(joints)}, tool_offset={"left": [0.0, 0.0, 0.0], "right": [0.0, 0.0, 0.0]})
+    settings.update(parts=list(parts), arms=["left"], headset="table", collision_margin=None, spatial_scale=1.0, episodes=str(tmp_path / "episodes"))
+    settings["robot"]["start_posture"] = {joint.urdf_joint: BENT[i] for i, joint in enumerate(joints)}
+    settings["robot"]["tool_offset"] = {"left": [0.0, 0.0, 0.0], "right": [0.0, 0.0, 0.0]}
     settings["arm"].update(return_speed=1.0, speed_scale=1.0, floor=-10.0)
     settings["robot"]["body_boxes"] = []
     headset = Headset()

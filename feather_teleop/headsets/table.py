@@ -235,7 +235,7 @@ def main(arguments: Optional[list] = None) -> None:
     parser.add_argument("--to", metavar="ROBOT", help="the robot computer's address; without it, print")
     robot = parser.parse_args(arguments).to
     if robot:
-        stream(robot, config.load()["table"]["port"])
+        stream(robot, config.read()["table"]["port"])
     else:
         show()
 

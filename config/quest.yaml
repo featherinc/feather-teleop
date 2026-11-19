@@ -15,16 +15,33 @@ worn:
   video_port: 8444     # video from its own process on this port (see the README); null: on the page's socket
   debug: true          # a status readout in the lower left of the view
 
-robot:                 # the SDK config the notebook starts the robot with
-  config: v0.5.1       # the SDK's robot config version (feathersdk/configs/user_configs/<version>)
-  urdf: ~/Workspace/URDF_C_Arm_04_YAM_Gripper_description/urdf/C_Arm_04_YAM_Gripper_sdk.urdf   # inside its package, so its meshes resolve; null: /feathersys/urdf
-  grippers: [left, right]   # the grippers present; one listed but missing stops the SDK from starting
-  cameras: {}          # camera service fields laid over the config's own, e.g. {serial: 12345678}
-  body_boxes:          # the body seen from above, which the elbows keep clear of; `below`: only up to that height
-    - {x: [-0.18, 0.20], y: [-0.10, 0.10]}                 # torso column and upper body
-    - {x: [-0.26, 0.25], y: [-0.25, 0.25], below: 0.35}    # base
-  # D_V1 (v0.6.0): body_boxes {x: [-0.25, 0.14], y: [-0.093, 0.093]}, {x: [-0.33, 0.19], y: [-0.25, 0.25], below: 0.30};
-  # tool_offset left [0.001, 0.024, -0.219], right [-0.001, -0.023, -0.219]; GuardSettings.body_clear 0.07
+robot: null            # which block of `robots` this robot is
+
+# Everything that differs between robots, measured on this unit: no two C-samples or D-samples are assumed alike.
+# Every value is required; the session will not start until each is filled in. Copy a block for another robot.
+robots:
+  c_sample:
+    config: null            # the SDK's robot config version (feathersdk/configs/user_configs/<version>), e.g. v0.5.1
+    urdf: null              # path to this robot's URDF, inside its package so meshes resolve
+    grippers: null          # the grippers on this robot: [left, right], one side, or []; one listed but missing stops the SDK
+    cameras: null           # camera service fields over the config's own, e.g. {serial: <the stereo camera's>}; {}: none
+    tool_offset: null       # m, the point the controller moves, in each arm's last joint frame: {left: [x, y, z], right: [x, y, z]}
+    body_boxes: null        # the body from above, which the elbows keep clear of: [{x: [lo, hi], y: [lo, hi], below: h}, ...] (m, base frame)
+    body_clear: null        # m the elbows keep from body_boxes; less than the start posture's own gap to them
+    start_posture: null     # rad by URDF joint (others 0), where every demonstration starts, e.g. {EpL: ..., EpR: ...}
+    neck_pitch_sign: null   # 1 or -1, so that looking up pitches the camera up
+    neck_yaw_sign: null     # 1 or -1, so that looking left yaws the camera left
+  d_sample:
+    config: null            # the SDK's robot config version (feathersdk/configs/user_configs/<version>), e.g. v0.5.1
+    urdf: null              # path to this robot's URDF, inside its package so meshes resolve
+    grippers: null          # the grippers on this robot: [left, right], one side, or []; one listed but missing stops the SDK
+    cameras: null           # camera service fields over the config's own, e.g. {serial: <the stereo camera's>}; {}: none
+    tool_offset: null       # m, the point the controller moves, in each arm's last joint frame: {left: [x, y, z], right: [x, y, z]}
+    body_boxes: null        # the body from above, which the elbows keep clear of: [{x: [lo, hi], y: [lo, hi], below: h}, ...] (m, base frame)
+    body_clear: null        # m the elbows keep from body_boxes; less than the start posture's own gap to them
+    start_posture: null     # rad by URDF joint (others 0), where every demonstration starts, e.g. {EpL: ..., EpR: ...}
+    neck_pitch_sign: null   # 1 or -1, so that looking up pitches the camera up
+    neck_yaw_sign: null     # 1 or -1, so that looking left yaws the camera left
 
 parts: [arms, base, neck, torso, cameras]   # what a demonstration drives; arms is required
 arms: [left, right]    # the arms that follow
@@ -33,14 +50,6 @@ spatial_scale: 1.5     # hand metres per controller metre
 task: "Quest teleoperation demonstration"
 episodes: episodes     # where demonstrations are saved, relative to the repository
 collision_margin: 0.03 # clearance the SDK's collision check keeps between the arms and the body; null: off
-
-# Where every demonstration starts, by URDF joint (others are 0): elbows bent, forearms forward. The solver also pulls each arm's redundant joint toward it.
-start_posture: {EpL: -1.484, EpR: 1.484}
-
-# The tool point the controller moves, in each arm's last joint frame: between the gripper's fingertips.
-tool_offset:
-  left: [-0.024, 0.001, -0.219]
-  right: [0.024, -0.001, -0.219]
 
 arm:
   speed_scale: 0.6     # fraction of each motor's speed limit
@@ -57,5 +66,3 @@ base:
   angular_speed: 0.333 # rad/s turning
 neck:
   speed: 1.0           # rad/s at full stick, and the fastest it follows the head
-  pitch_sign: -1       # flip a sign if that direction is wrong
-  yaw_sign: -1
