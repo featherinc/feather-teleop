@@ -18,8 +18,6 @@ and in its motor firmware. To run the package, install an SDK that contains them
 | `utils/mailbox.py` | the command slot behind the control modes |
 | `robot/actuators/damiao/i2rt_gripper.py`, `damiao_motor.py` | the I2RT gripper (`go_to()`, `get_opening()`) |
 | `robot/services/camera_process.py`, `camera_outputs.py`, `camera_encoding.py`, `camera_frames.py` | recording the cameras and streaming them to the worn headset, on the Jetson's hardware encoders (no CPU colour conversion; a camera recorded and streamed at full size is encoded once) |
-| `backend/` | the C++ backend: the Teensy link (`TeensyManager`), telemetry, motor classes, build and tests |
-| `robot/comms/cpp_link.py` | the Teensy link through the backend's C API, so motor feedback isn't delayed by Python's interpreter lock |
 
 ## Changed files
 
@@ -32,5 +30,6 @@ and in its motor firmware. To run the package, install an SDK that contains them
 | `robot/actuator_systems/neck_system.py` | `describe()`, `read_state()`, `set_targets()` |
 | `robot/actuator_systems/manipulation_system.py` | the I2RT gripper system (`left_gripper`, `right_gripper`) |
 | `robot/services/camera_service.py` | `start_recording()`, `stop_recording()`, `faults`; for the worn headset `start_stream(host, names)`, `show_stream(names)`, `stop_stream()`, `calibration()`, `get_imu_data()` |
-| `robot/comms/comms_manager.py`, `robot/actuators/telemetry.py`, `configs/user_configs/*/infra/comms_manager_conf.py` | `CommsManagerConfig.use_cpp_comms` (off by default): the Teensy link in C++. Not needed by this package |
 | `logging/log.py` | `log_event()`, which marks each demonstration's start and end in the robot's log |
+
+Not copied here, and not needed by this package: the optional C++ Teensy link (`CommsManagerConfig.use_cpp_comms`), on the development SDK's `aaronrhim/cpp-loop` branch.

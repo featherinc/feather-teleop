@@ -1,5 +1,0 @@
-# clangd working directory is this file's directory (backend/).
-# -I. makes "qdefs/..." resolve. src/utils matches the Makefile -I flag.
--std=c++17
--I.
--Isrc/utils
