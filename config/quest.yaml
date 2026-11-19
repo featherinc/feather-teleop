@@ -12,8 +12,8 @@ worn:
   cert: headset_cert.pem   # the page's certificate and key (see the README), relative to the repository;
   key: headset_key.pem     # both null: plain http, which only works through `adb reverse`
   video: true          # show the robot's cameras in the headset (the camera service's live stream)
-  video_port: 8444     # the video comes from a process of its own on this port, so a frame never holds a pose up. If the page says it has no link to it, open https://<robot>:8444/ in the headset's browser once and accept the certificate (with adb reverse: forward this port too). null: on the page's own socket
-  debug: true          # a readout in the lower left of the view during a demonstration: frame rates, the round trip, tracking, the links, the robot loop's rate and what is wrong now. false: none
+  video_port: 8444     # video from its own process on this port (see the README); null: on the page's socket
+  debug: true          # a status readout in the lower left of the view
 
 robot:                 # the SDK config the notebook starts the robot with
   config: v0.5.1       # the SDK's robot config version (feathersdk/configs/user_configs/<version>)
@@ -23,7 +23,8 @@ robot:                 # the SDK config the notebook starts the robot with
   body_boxes:          # the body seen from above, which the elbows keep clear of; `below`: only up to that height
     - {x: [-0.18, 0.20], y: [-0.10, 0.10]}                 # torso column and upper body
     - {x: [-0.26, 0.25], y: [-0.25, 0.25], below: 0.35}    # base
-  # D_V1 robot (v0.6.0), from its URDF's meshes: tool_offset left [0.001, 0.024, -0.219], right [-0.001, -0.023, -0.219] (its wrist-roll frame has x and y the other way round); body_boxes {x: [-0.25, 0.14], y: [-0.093, 0.093]} and {x: [-0.33, 0.19], y: [-0.25, 0.25], below: 0.30}. Its start posture's elbow is 0.101 m from the torso box, so GuardSettings.body_clear (0.10) must come down, to 0.07.
+  # D_V1 (v0.6.0): body_boxes {x: [-0.25, 0.14], y: [-0.093, 0.093]}, {x: [-0.33, 0.19], y: [-0.25, 0.25], below: 0.30};
+  # tool_offset left [0.001, 0.024, -0.219], right [-0.001, -0.023, -0.219]; GuardSettings.body_clear 0.07
 
 parts: [arms, base, neck, torso, cameras]   # what a demonstration drives; arms is required
 arms: [left, right]    # the arms that follow
@@ -44,8 +45,8 @@ tool_offset:
 arm:
   speed_scale: 0.6     # fraction of each motor's speed limit
   return_speed: 0.3    # rad/s, joint speed of the moves to the start posture and home
-  floor: 0.0           # lowest height of the tool point: 0 lets the fingertips pick things up from the ground. The last 15 cm down are slowed (ArmSettings.floor_slow_within, floor_down_speed)
-  elbow_follow: false  # worn: the robot's elbow swings as yours does (estimated from your head and controller; the hand stays put). At a demonstration's first grip hold your arm as the start posture: upper arm hanging, forearm forward. Not yet run on a robot
+  floor: 0.0           # lowest height of the tool point; the last 15 cm down are slowed
+  elbow_follow: false  # worn: the robot's elbow follows yours (see the README)
 
 torso:                 # table: follows a gripped wrist's height relative to its shoulder
   rise_above: 0.10     # rise above this

@@ -22,7 +22,7 @@ DOUBLE_PRESS = 0.4         # s, two grip presses within this count as a double p
 STICK_HOLD = 0.6           # s the joystick is held down to redefine "forward"
 GRIPPER_OPEN_SNAP = 0.01   # an opening gripper within this of fully open is sent fully open
 FLOOR_ATTEMPTS = 4         # times a step that ends below the floor is halved before it is dropped
-FLOOR_CREEP = 0.2          # share of `floor_down_speed` still allowed at the floor itself, so the last centimetre is reached
+FLOOR_CREEP = 0.2          # share of `floor_down_speed` left at the floor itself
 HOME, WRIST_VIEW = "home", "wrist_view"   # what two grip presses do
 
 
@@ -30,7 +30,7 @@ HOME, WRIST_VIEW = "home", "wrist_view"   # what two grip presses do
 class ElbowFollowSettings:
     # The operator's elbow, estimated, steering the robot's: its swing round the shoulder-wrist line, through the arm's spare freedom, so the hand stays where it is.
     #
-    # The headset gives no elbow: the shoulder is placed from the head, and the forearm runs back from the controller along a direction fixed in the controller's frame, taken at the demonstration's first grip with the operator's arm held as the start posture (upper arm hanging, forearm forward). The robot's arm is shaped like a human's, so the same swing reads the same on it.
+    # The headset has no elbow, so it is estimated: shoulder from the head, forearm from the controller (learned at the first grip).
     gain: float = 4.0                                    # 1/s, how hard the elbow is turned toward the operator's
     shoulder: Tuple[float, float, float] = (-0.05, 0.18, -0.22)   # m from the head: back, aside (to the arm's side), down
     upper_arm: float = 0.30                              # m
@@ -167,7 +167,7 @@ class GripperCommand:
     def _eased(self, opening: float) -> float:
         # Return `opening`, kept within `squeeze` of the jaws once they have stood still for `squeeze_after` while asked further closed.
         #
-        # Counted from the later of the two, so jaws that rested at any opening get `squeeze_after` to start moving: counted from their last motion alone, a rested gripper was held to a squeeze too small to start it and never closed.
+        # Timed from the later of the two, so jaws at rest still get `squeeze_after` to start moving.
         jaws = float(self.gripper.get_opening())
         now = self.clock()
         if self._jaws is None or abs(jaws - self._jaws) > self.squeeze / 2:   # they moved
@@ -388,7 +388,7 @@ class ArmFollower:
         if s.elbow_follow:
             swing = self._elbow_swing(mine, dt)
             if swing is not None:
-                # The arm has one spare freedom, so the lean to the start posture would pull against the operator's elbow on the same motion: the elbow has it alone, faded as the guards fade the lean.
+                # The elbow swing replaces the lean to the start posture: both would use the arm's one spare freedom.
                 elbow_motion = elbow_motion + posture_fraction * swing
                 posture_fraction = 0.0
         move = self.ik.step(q_urdf, linear, angular, dt, s.speed_scale, elbow_motion, posture_fraction)
@@ -580,7 +580,7 @@ class ArmFollower:
 def slowed_down(step: float, height: float, slow_within: float, down_speed: float, dt: float) -> float:
     # Return `step` (m this tick, up positive) for a point `height` m above the floor, slowed near it.
     #
-    # Within `slow_within` of the floor a step down covers at most `down_speed` m/s, in proportion to the height left and never under FLOOR_CREEP of it. Steps up, and steps from higher up, are kept.
+    # Near the floor, a step down is capped at `down_speed`, scaled by the height left (at least FLOOR_CREEP of it).
     if step >= 0.0 or height >= slow_within:
         return step
     return max(step, -down_speed * max(FLOOR_CREEP, height / slow_within) * dt)

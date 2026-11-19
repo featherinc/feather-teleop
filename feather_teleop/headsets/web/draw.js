@@ -129,7 +129,7 @@ export class Drawing {
     frame.close();
   }
 
-  // Upload the newest decoded frames, and move the picture's direction a step toward where its camera looked. Without a direction from the robot, the picture stays in front of the head.
+  // Upload the newest frames and step the picture toward where its camera looked (in front of the head if unknown).
   update(video, overlays, now, headLook) {
     const newest = video.stream(STEREO).take();
     if (newest) {

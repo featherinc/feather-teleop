@@ -100,7 +100,7 @@ def camera_elevation(cameras) -> Callable[[], float]:
 class HeadNeck(Part):
     # The neck follows the operator's head (worn headset), within each motor's range and `speed`.
     #
-    # Yaw is relative to where the head faces at the start. Pitch is absolute when `elevation` is given, else relative too. Each tick it sets `headset.look`, so the page can place the picture where it was taken.
+    # Yaw is relative to the head at the start; pitch is absolute when `elevation` is given. Sets `headset.look` each tick.
     #
     # Args:
     #     neck: The SDK neck system.

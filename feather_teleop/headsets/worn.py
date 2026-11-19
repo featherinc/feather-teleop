@@ -1,6 +1,7 @@
 # The headset worn by the operator, through a WebXR page the robot serves over one WebSocket.
 #
-# Poses come up in WebXR's axes and are turned into the robot's here. Status (JSON) and the cameras' H.264 go down: on the same socket, or with `video_port` from a process of its own (video_relay.py) on a socket of its own, so a frame never holds a pose up. A browser grants an immersive session only over https, so the page needs a certificate (see the README).
+# Poses come up in WebXR's axes and are turned into the robot's. Status and H.264 video go down (video via video_relay.py
+# when `video_port` is set). Immersive sessions need https, so the page needs a certificate (see the README).
 import asyncio
 import json
 import select
@@ -144,11 +145,11 @@ def tls_context(cert, key) -> ssl.SSLContext:
 class WornHeadset:
     # Serves the page and reads the headset that sends poses to it.
     #
-    # An open page that sends nothing is only told the status. The first page to send a pose is the headset; when another starts sending, it takes over and the first is closed for good.
+    # The first page to send a pose is the headset; a later one takes over and the first is closed.
     #
     # Attributes:
     #     epoch: Changes when the headset's tracking frame does (recentred, or the session entered again).
-    #     look: Where the robot's camera looks, (up, left) in rad in the operator's tracking frame, or None. Set by the neck and sent with each video frame, so the page shows the picture where the camera was looking.
+    #     look: Where the robot's camera looks, (up, left) rad in the operator's frame, or None. Sent with each frame.
     #
     # Args:
     #     address, port: Where to serve the page.
@@ -173,7 +174,7 @@ class WornHeadset:
         self._stamp = None     # when the newest pose was sent, on this computer's clock
         self._lead = None      # the least (arrival - the page's clock) seen from this headset
         self._lead_at = 0.0    # when it was taken
-        self._arrived = None   # (the page's clock in the newest pose, when it arrived here), for the debug readout's round trip
+        self._arrived = None   # (page clock of the newest pose, arrival time), for the round trip
         self._status = {"phase": "ready", "camera": None, "overlay": {"left": None, "right": None}, "video_port": None, "debug": None}
         self._client = None
         self._transport = None
@@ -316,7 +317,7 @@ class WornHeadset:
     def take(self, data: bytes) -> bool:
         # Take one message from the headset's page. Returns False if it was not taken (`rejected` says why).
         #
-        # The page's clock is offset from this one by an unknown amount, so a pose's age counts from the quickest trip seen so far: a pose held up by a stalled link does not arrive looking new.
+        # The page's clock has an unknown offset, so age is measured against the quickest trip seen so far.
         try:
             packet = parse(data)
         except (ValueError, struct.error) as error:
@@ -465,7 +466,7 @@ class Depacketizer:
 
 
 class VideoRelay:
-    # video_relay.py as a process of its own: takes the camera service's streams on this computer's UDP ports and serves them to the page on (`address`, `port`), with the page's certificate.
+    # Runs video_relay.py as a child process that serves the camera streams to the page.
     #
     # It ends with close(), and by itself when this process does: it waits on its standard input.
     #
@@ -475,7 +476,7 @@ class VideoRelay:
     #     cert, key: The page's certificate's files, or None for plain http.
     START_TIMEOUT = 15.0   # s for the process to say it serves
     STOP_TIMEOUT = 3.0     # s for it to end once told to
-    _running = {}          # {port asked for: the relay on it}: a new one on the same port (the notebook cell run again) ends the old one first
+    _running = {}          # {port: relay}; a new relay on a taken port ends the old one
 
     def __init__(self, address: str, port: int, streams: dict, cert=None, key=None):
         before = VideoRelay._running.pop(port, None)
@@ -529,7 +530,7 @@ class VideoRelay:
 class ServiceVideo:
     # Forwards the camera service's live stream to the worn headset, without encoding anything in this process.
     #
-    # The stereo camera always streams, a wrist camera only while it is shown: the service encodes just those (show_stream), at its config's `stream_*` settings, so a hidden wrist costs the encoders nothing.
+    # The stereo camera always streams; a wrist camera only while shown, so a hidden one costs no encoder.
     #
     # Args:
     #     cameras: The SDK camera service.

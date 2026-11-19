@@ -1,10 +1,11 @@
-# The worn headset's video in a process of its own: the camera service's RTP/H.264 streams in on this computer's UDP ports, whole access units out to the page on a WebSocket of its own (`/video` on `--port`).
+# The worn headset's video, in its own process: RTP/H.264 in from the camera service, access units out on `/video`.
 #
 #     camera service's process --RTP/UDP, 127.0.0.1--> this process --wss /video--> the headset's page
 #
-# Started and ended by worn.VideoRelay (quest.yaml's `worn.video_port`). The teleop's own process also runs the SDK, the solver and the loop, so a frame forwarded there waits its turn among them and holds the poses' socket up; here nothing else runs.
+# Started by worn.VideoRelay. A separate process, so video never waits behind the control loop or delays the poses.
 #
-# Control, one datagram each on the UDP port the ready line names: RELAY_LOOK + up, left (two floats, rad: where the robot's camera looks, carried by every frame after it), RELAY_RESET (the streams start again). The first line printed is `ready <the WebSocket's port> <the control port>`. It ends when its standard input closes, so it never outlives the process that started it.
+# Prints `ready <websocket port> <control port>`, then takes RELAY_LOOK / RELAY_RESET datagrams on the control port.
+# Exits when stdin closes, so it never outlives its parent.
 import argparse
 import asyncio
 import os

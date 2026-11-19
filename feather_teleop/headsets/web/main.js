@@ -1,4 +1,4 @@
-// The worn headset's page. Every displayed frame it sends the head's and both controllers' poses and inputs to the robot. While a demonstration runs it shows the robot's stereo camera, a wrist camera when asked and, if the robot asks, the debug readout; between demonstrations it shows the room.
+// The worn headset's page: sends the poses and inputs every frame, and shows the robot's cameras during a demonstration.
 import { Readout } from "./debug.js";
 import { Drawing, lookOf } from "./draw.js";
 import { BUTTON_LOWER, BUTTON_STICK, BUTTON_UPPER, Link, VideoLink } from "./link.js";

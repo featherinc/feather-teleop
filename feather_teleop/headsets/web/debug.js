@@ -1,6 +1,6 @@
 // The debug readout (quest.yaml's `worn.debug`): a few lines fixed to the head, lower left, under the left wrist camera's picture.
 //
-// What the page measures itself: frames drawn and decoded a second, the round trip to the robot, each controller's tracking and the two links. What the robot says (its status' `debug`): the loop's rate and what is wrong now.
+// Measured here: frame rates, round trip, tracking, links. From the robot: its loop rate and current faults.
 const PIXELS = [512, 256];   // the readout's texture
 const EVERY_MS = 500;        // between two redraws of it
 export const ASIDE = -0.27, BELOW = 0.40, WIDTH = 0.30;   // m: left of and below the middle of the view, and across

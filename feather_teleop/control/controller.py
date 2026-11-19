@@ -32,8 +32,8 @@ class SmoothSettings:
 @dataclass
 class HoldSettings:
     # A bubble around a controller held still: inside it the hand does not move at all, so the operator's sway and drift never reach it.
-    position: float = 0.02      # m, the bubble's radius around the controller's position (the operator's metres, before spatial_scale)
-    rotation: float = 0.1       # rad, its radius around the orientation; it must span a whole sway, as it forms wherever the sway is
+    position: float = 0.02      # m, bubble radius around the position (before spatial_scale)
+    rotation: float = 0.1       # rad, bubble radius around the orientation
     still_speed: float = 0.02   # m/s, a low-passed speed above this counts as clearly moving
     still_rate: float = 0.2     # rad/s, the same for turning
     speed_hz: float = 1.0       # Hz, cutoff of the low-pass on the speed
@@ -82,12 +82,45 @@ class _FilterState:
     angular_velocity: np.ndarray
 
 
-@dataclass
 class _Bubble:
-    # One channel of the hold (position or orientation).
-    center: Optional[object] = None                                  # the value followed while inside, or None: no bubble
-    still: float = 0.0                                               # s without clearly moving
-    offset: np.ndarray = field(default_factory=lambda: np.zeros(3))   # gap still to close since the controller left it
+    # One channel of the hold. Subclasses say how far a value is from the centre, and how to shift it back.
+
+    def __init__(self):
+        self.center = None             # the value held while inside, or None: no bubble
+        self.still = 0.0               # s without clearly moving
+        self.offset = np.zeros(3)      # the gap still to close since the controller left
+
+    def follow(self, value, moving: bool, dt: float, radius: float, settings: HoldSettings):
+        # Return the value to follow this tick.
+        if self.center is not None:
+            out = self.gap(value, self.center)
+            if norm(out) <= radius:
+                return self.center
+            self.center, self.still, self.offset = None, 0.0, out * (radius / norm(out))   # left it: follow from the edge
+        elif norm(self.offset) > 0.0:   # close the gap at one radius per `release`
+            far = norm(self.offset)
+            self.offset = self.offset * (max(0.0, far - radius * dt / settings.release) / far)
+        self.still = 0.0 if moving else self.still + dt
+        followed = self.shifted(value, self.offset)
+        if self.still >= settings.settle:
+            self.center, self.offset = followed, np.zeros(3)
+        return followed
+
+
+class _PositionBubble(_Bubble):
+    def gap(self, position, center):
+        return position - center
+
+    def shifted(self, position, offset):
+        return position - offset
+
+
+class _RotationBubble(_Bubble):
+    def gap(self, rotation, center):
+        return to_vector(rotation @ center.T)
+
+    def shifted(self, rotation, offset):
+        return to_matrix(-offset) @ rotation
 
 
 @dataclass
@@ -97,8 +130,8 @@ class _HoldState:
     raw_rotation: np.ndarray
     velocity: np.ndarray          # low-passed
     angular_velocity: np.ndarray
-    place: _Bubble = field(default_factory=_Bubble)
-    turn: _Bubble = field(default_factory=_Bubble)
+    place: _Bubble = field(default_factory=_PositionBubble)
+    turn: _Bubble = field(default_factory=_RotationBubble)
 
 
 def axis_map(axes: Sequence[int]) -> np.ndarray:
@@ -344,9 +377,9 @@ class Controller:
         return smooth_position, smooth_rotation
 
     def _held(self, position: np.ndarray, rotation: np.ndarray):
-        # Return the pose to follow: once the controller has not clearly moved for `settle`, a bubble forms where the followed pose is, and the pose stays exactly there until the controller leaves it.
+        # Return the pose to follow. After `settle` s still, it is frozen until the controller leaves a bubble around it.
         #
-        # Then it is followed from the bubble's edge, without a jump, and the gap closes over `release`. Position and orientation have separate bubbles, so turning the controller in place holds the position. The cost: a motion slower than `still_speed` comes out in steps of the bubble.
+        # Leaving it, the pose follows from the edge without a jump. Position and orientation have separate bubbles.
         h = self.settings.hold
         now = self.clock()
         state = self._hold
@@ -362,51 +395,14 @@ class Controller:
         state.time, state.raw_position, state.raw_rotation = now, position, rotation
 
         # A sway goes back and forth, so its low-passed speed stays low; a real motion keeps its direction.
-        position = _bubble(state.place, position, norm(state.velocity) >= h.still_speed, dt, h.position, h, _apart, _back)
-        rotation = _bubble(state.turn, rotation, norm(state.angular_velocity) >= h.still_rate, dt, h.rotation, h, _turned, _unturned)
+        position = state.place.follow(position, norm(state.velocity) >= h.still_speed, dt, h.position, h)
+        rotation = state.turn.follow(rotation, norm(state.angular_velocity) >= h.still_rate, dt, h.rotation, h)
         return position, rotation
 
 
 def _blend(previous, value, factor: float):
     # One step of a first-order low-pass from `previous` toward `value`.
     return previous + factor * (value - previous)
-
-
-def _bubble(bubble: _Bubble, value, moving: bool, dt: float, radius: float, settings: HoldSettings, gap, shifted):
-    # Return the value to follow for the controller's `value`, one tick of one channel of the hold.
-    #
-    # `gap(value, center)` is how far `value` is from `center`, as a 3-vector; `shifted(value, offset)` is `value` moved back by `offset`.
-    if bubble.center is not None:
-        out = gap(value, bubble.center)
-        if norm(out) <= radius:
-            return bubble.center
-        # Left it: followed from the edge, the motion past the edge comes through, and the radius is still to close.
-        bubble.center, bubble.still, bubble.offset = None, 0.0, out * (radius / norm(out))
-    else:
-        far = norm(bubble.offset)
-        if far > 0.0:   # the gap closes at one radius per `release`
-            bubble.offset = bubble.offset * (max(0.0, far - radius * dt / settings.release) / far)
-    bubble.still = 0.0 if moving else bubble.still + dt
-    followed = shifted(value, bubble.offset)
-    if bubble.still >= settings.settle:
-        bubble.center, bubble.offset = followed, np.zeros(3)
-    return followed
-
-
-def _apart(position: np.ndarray, center: np.ndarray) -> np.ndarray:
-    return position - center
-
-
-def _back(position: np.ndarray, offset: np.ndarray) -> np.ndarray:
-    return position - offset
-
-
-def _turned(rotation: np.ndarray, center: np.ndarray) -> np.ndarray:
-    return to_vector(rotation @ center.T)
-
-
-def _unturned(rotation: np.ndarray, offset: np.ndarray) -> np.ndarray:
-    return to_matrix(-offset) @ rotation
 
 
 def _normalised(vector: np.ndarray) -> np.ndarray:

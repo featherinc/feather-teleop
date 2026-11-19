@@ -24,7 +24,7 @@ class TorsoSettings:
 class Torso(Part):
     # The torso, moved by the hands' height (table headset) or, worn, by Y (up) and X (down).
     #
-    # It rises while a gripping arm's wrist target is above the band around its shoulder, sinks while it is below, and never sinks with a hand near the floor. The arms compensate, as their targets are fixed in the room.
+    # Rises while a gripping wrist is above its shoulder's band, sinks while below; never sinks with a hand near the floor.
     #
     # Args:
     #     torso: The SDK torso system.

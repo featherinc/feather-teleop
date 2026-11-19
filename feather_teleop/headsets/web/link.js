@@ -1,4 +1,4 @@
-// The WebSockets to the robot: poses up and the status down on one, the video on the same one or, when the status names a `video_port`, on one of its own. Message layouts: ../worn.py (POSE and VIDEO).
+// The WebSockets to the robot: poses and status on one, video on its own when the status names a `video_port`. Layouts: ../worn.py.
 import { problem, show } from "./page.js";
 
 export const TYPE_POSE = 1, TYPE_VIDEO = 2;

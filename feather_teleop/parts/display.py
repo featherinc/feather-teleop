@@ -13,9 +13,9 @@ FAULT_WIDTH = 90       # characters of each fault line the readout shows
 
 
 class Display(Part):
-    # The worn headset's picture: the stereo camera during a demonstration, plus an arm's wrist camera in a corner while its `wrist_view` is on. Between demonstrations the headset shows the room.
+    # The worn headset's picture during a demonstration: the stereo camera, plus a wrist camera while its arm's `wrist_view` is on.
     #
-    # Start it first, so the camera service budgets its encoders for the stream and the recording together. A stream that stops (an encoder stalled) is started again, a gap of a fraction of a second, and the demonstration goes on. With `debug`, the page is told twice a second what its readout shows of the robot's side: the loop's rate and what is wrong now.
+    # Start it first, so the camera service budgets the stream and the recording together. A stalled stream is restarted.
     #
     # Args:
     #     headset: The WornHeadset.

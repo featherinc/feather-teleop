@@ -36,7 +36,9 @@ Set `headset` in `config/quest.yaml` to `worn` or `table`.
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout headset_key.pem -out headset_cert.pem -subj /CN=feather
 ```
 
-Run the notebook, then open `https://<robot address>:8443` in the headset's browser, accept the certificate warning and press **Enter**. `http://<robot address>:8080` leads there too. The video comes on a port of its own (`worn.video_port`, 8444): if the page says it has no link to it, open `https://<robot address>:8444/` once and accept the certificate there too. With `worn.debug`, a readout in the lower left of the view shows the frame rates, the round trip, tracking, the links, the robot loop's rate and what is wrong.
+Run the notebook, then open `https://<robot address>:8443` in the headset's browser, accept the certificate warning and press **Enter**. `http://<robot address>:8080` leads there too.
+
+The video comes on its own port (`worn.video_port`, 8444). If the page says it has no link to it, open `https://<robot address>:8444/` once and accept the certificate there too. `worn.debug` adds a readout in the lower left of the view: frame rates, round trip, tracking, links, the robot loop's rate and current faults.
 
 **Table.** Plug the headset into the laptop, put it on once to accept **Allow USB debugging**, and set it down facing you. Check it, then stream it to the robot:
 
@@ -84,6 +86,8 @@ The notebook's `ready()` and `home()` moves are **not** collision checked. Clear
 ## Settings
 
 `config/quest.yaml` holds what you set, with a comment on each value. Start with `headset` and the `robot` section (your robot's SDK config version, its URDF and grippers), then check the per-robot values: `tool_offset`, `body_boxes`, `start_posture` and the neck's signs.
+
+`arm.elbow_follow` (worn) makes the robot's elbow swing as yours does. Your elbow is estimated from the headset and controller, so at each demonstration's first grip hold your arm as the start posture: upper arm hanging, forearm forward.
 
 Tuning is in the code, as the defaults of each settings class: `ControllerSettings` in `control/controller.py`, `ArmSettings` in `control/follower.py`, each part's settings in `parts/`, and the solver's and guards' (`IKSettings`, `GuardSettings`) in FeatherSDK's `arm_kinematics`.
 
